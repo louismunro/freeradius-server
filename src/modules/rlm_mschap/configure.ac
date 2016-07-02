@@ -160,7 +160,7 @@ if test x$with_[]modname != xno; then
       fi
     fi
 
-    if test "x$ac_cv_header_statsdclient_h" = "xyes" ; then
+    if test "x$ac_cv_header_statsd_statsdmclient_h" = "xyes" ; then
 
       smart_try_dir="$statsdclient_lib_dir"
       FR_SMART_CHECK_LIB(statsdclient, statsd_init)
