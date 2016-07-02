@@ -137,7 +137,7 @@ if test x$with_[]modname != xno; then
     smart_try_dir="$statsdclient_include_dir"
     FR_SMART_CHECK_INCLUDE(statsd/statsd-client.h, [#include <stdint.h>
 					#include <stdbool.h>])
-    if test "x$ac_cv_header_statsdclient_h" != "xyes"; then
+    if test "x$ac_cv_header_statsd_statsdmclient_h" != "xyes"; then
         AC_MSG_WARN([statsd-client.h not found. Use --with-statsdclient-include-dir=<path>.])
         AC_MSG_WARN([silently building without support for statsd. requires: libstatsdclient])
     fi
