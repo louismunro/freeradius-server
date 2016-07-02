@@ -1,6 +1,6 @@
 AC_INIT(rlm_mschap.c)
 AC_REVISION($Revision$)
-AC_DEFUN(modname,[rlm_mschap])
+AC_DEFUN([modname],[rlm_mschap])
 
 if test x$with_[]modname != xno; then
 
@@ -60,6 +60,53 @@ if test x$with_[]modname != xno; then
 	esac])
 
 
+    dnl extra argument: --with-statsdclient-include-dir=DIR
+    statsdclient_include_dir=
+    AC_ARG_WITH(statsdclient-include-dir,
+	[AS_HELP_STRING([--with-statsdclient-include-dir=DIR],
+		[Directory where the statsdclient includes may be found])],
+	[case "$withval" in
+	    no)
+		AC_MSG_ERROR(Need statsdclient-include-dir)
+		;;
+	    yes)
+		;;
+	    *)
+		statsdclient_include_dir="$withval"
+		;;
+	esac])
+
+    dnl extra argument: --with-statsdclient-lib-dir=DIR
+    statsdclient_lib_dir=
+    AC_ARG_WITH(statsdclient-lib-dir,
+	[AS_HELP_STRING([--with-statsdclient-lib-dir=DIR],
+		[Directory where the statsdclient libraries may be found])],
+	[case "$withval" in
+	    no)
+		AC_MSG_ERROR(Need statsdclient-lib-dir)
+		;;
+	    yes)
+		;;
+	    *)
+		statsdclient_lib_dir="$withval"
+		;;
+	esac])
+
+    dnl extra argument: --with-statsdclient-dir=DIR
+    AC_ARG_WITH(statsdclient-dir,
+	[AS_HELP_STRING([--with-statsdclient-dir=DIR],
+		[Base directory where statsdclient is installed])],
+	[case "$withval" in
+	    no)
+		AC_MSG_ERROR(Need statsdclient-dir)
+		;;
+	    yes)
+		;;
+	    *)
+		statsdclient_lib_dir="$withval/lib"
+		statsdclient_include_dir="$withval/include"
+		;;
+	esac])
     dnl ############################################################
     dnl # Check for header files
     dnl ############################################################
@@ -87,6 +134,14 @@ if test x$with_[]modname != xno; then
         AC_MSG_WARN([silently building without support for direct authentication via winbind. requires: libwbclient])
     fi
 
+    smart_try_dir="$statsdclient_include_dir"
+    FR_SMART_CHECK_INCLUDE(statsd/statsd-client.h, [#include <stdint.h>
+					#include <stdbool.h>])
+    if test "x$ac_cv_header_statsdclient_h" != "xyes"; then
+        AC_MSG_WARN([statsd-client.h not found. Use --with-statsdclient-include-dir=<path>.])
+        AC_MSG_WARN([silently building without support for statsd. requires: libstatsdclient])
+    fi
+
     dnl ############################################################
     dnl # Check for libraries
     dnl ############################################################
@@ -102,6 +157,17 @@ if test x$with_[]modname != xno; then
       else
         mschap_sources="$mschap_sources auth_wbclient.c"
         AC_DEFINE([WITH_AUTH_WINBIND],[1],[Build with direct winbind auth support])
+      fi
+    fi
+
+    if test "x$ac_cv_header_statsdclient_h" = "xyes" ; then
+
+      smart_try_dir="$statsdclient_lib_dir"
+      FR_SMART_CHECK_LIB(statsdclient, statsd_init)
+      if test "x$ac_cv_lib_statsdclient_statsd_init" != "xyes"; then
+        AC_MSG_WARN([statsdclient libraries not found. Use --with-statsdclient-lib-dir=<path>.])
+      else
+        AC_DEFINE([WITH_STATSD],[1],[Build with direct statsdclient auth support])
       fi
     fi
 
