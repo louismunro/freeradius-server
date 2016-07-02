@@ -32,8 +32,40 @@ RCSID("$Id$")
 #include "rlm_mschap.h"
 #include "mschap.h"
 #include "auth_wbclient.h"
+#include "statsd/statsd-client.h"
 
 #define NT_LENGTH 24
+
+/*
+ * Compute the elapsed time between now and a time in the past.
+ *
+ * Returns:  
+ *  a double containing the number of miliseconds between 
+ *  now and the tv passed as argument.
+ */
+double howlong(struct timeval t1);
+
+double howlong(struct timeval t1)
+{
+    struct timeval end;
+    double elapsed;
+    gettimeofday(&end, NULL);
+    elapsed = (end.tv_sec - t1.tv_sec) * 1000.0;    // sec to ms
+    elapsed += (end.tv_usec - t1.tv_usec) / 1000.0; // us to ms
+
+    return elapsed;
+}
+
+char *statsd_normalize (char *metric )
+    // replace the dots in the metric with underscores. StatsD uses dots as namespace sep.
+    char c;
+    for ( int i=0; i < strlen(metric); i++ ) { 
+        c =  metric[i];
+        if ( c == '.' ) { 
+            metric[i] = '_';
+        } 
+    }
+}
 
 /*
  *	Check NTLM authentication direct to winbind via
@@ -109,7 +141,7 @@ int do_auth_wbclient(rlm_mschap_t *inst, REQUEST *request,
 					WBC_MSV1_0_ALLOW_WORKSTATION_TRUST_ACCOUNT |
 					WBC_MSV1_0_ALLOW_SERVER_TRUST_ACCOUNT;
 
-
+    
 	/*
 	 * Send auth request across to winbind
 	 */
@@ -122,7 +154,16 @@ int do_auth_wbclient(rlm_mschap_t *inst, REQUEST *request,
 	RDEBUG2("sending authentication request user='%s' domain='%s'", authparams.account_name,
 									authparams.domain_name);
 
+    struct timeval t1;
+    double elapsed;
+    gettimeofday(&t1, NULL);
+
 	err = wbcCtxAuthenticateUserEx(wb_ctx, &authparams, &info, &error);
+
+    elapsed = howlong(t1);
+    char * metric[1024] = "";
+    asprintf(&metric, "%s.ntlm_auth.time", inst->statsd_prefix);
+    statsd_timing(inst->statsd_link, metric, elapsed);
 
 	fr_connection_release(inst->wb_pool, wb_ctx);
 
@@ -191,4 +232,5 @@ done:
 
 	return rcode;
 }
+
 

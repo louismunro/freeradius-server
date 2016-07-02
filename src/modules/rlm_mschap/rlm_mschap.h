@@ -9,6 +9,9 @@ RCSIDH(rlm_mschap_h, "$Id$")
 
 #ifdef WITH_AUTH_WINBIND
 #  include <wbclient.h>
+    #ifdef WITH_STATSD
+#include "statsd/statsd-client.h"
+    #endif 
 #endif
 
 /* Method of authentication we are going to use */
@@ -39,6 +42,12 @@ typedef struct rlm_mschap_t {
 	vp_tmpl_t		*wb_username;
 	vp_tmpl_t		*wb_domain;
 	fr_connection_pool_t    *wb_pool;
+    bool            send_metrics;
+    char            statsd_prefix[255]; //normally this would be the hosts' own name
+    char            *statsd_host;
+    uint16_t        statsd_port;
+    float           statsd_sample_rate;
+    statsd_link     *statsd_link;
 #ifdef __APPLE__
 	bool			open_directory;
 #endif

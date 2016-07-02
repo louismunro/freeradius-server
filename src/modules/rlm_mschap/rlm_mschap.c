@@ -39,6 +39,9 @@ RCSID("$Id$")
 
 #ifdef WITH_AUTH_WINBIND
 #include "auth_wbclient.h"
+    #ifdef WITH_STATSD
+#include "statsd/statsd_client.h"
+    #endif
 #endif
 
 #ifdef HAVE_OPENSSL_CRYPTO_H
@@ -563,6 +566,14 @@ static const CONF_PARSER module_config[] = {
 #ifdef __APPLE__
 	{ "use_open_directory", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_mschap_t, open_directory), "yes" },
 #endif
+#ifdef WITH_AUTH_WINBIND
+    #ifdef WITH_STATSD
+	{ "send_statsd_metrics", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_mschap_t, send_metrics), "yes" },
+	{ "statsd_host", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_mschap_t, statsd_host), "localhost" },
+	{ "statsd_port", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_mschap_t, statsd_port), 8125 },
+	{ "statsd_sample_rate", FR_CONF_OFFSET(PW_TYPE_FLOAT, rlm_mschap_t, statsd_sample_rate), 1.0 },
+    #endif
+#endif
 	CONF_PARSER_TERMINATOR
 };
 
@@ -656,6 +667,37 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 		return -1;
 	}
 
+#ifdef WITH_AUTH_WINBIND
+    #ifdef WITH_STATSD
+    if (!inst->statsd_prefix) { 
+        char hostname[255];
+        if ((gethostname(hostname, sizeof(hostname))) < 0 ) { 
+            cf_log_err_cs(conf, "cannot get my own hostname: %s\n", strerror(errno));
+            return -1;
+        }
+        inst->statsd_prefix = hostname;
+    }
+    // replace the dots in the hostname with underscores. StatsD uses dots as namespace sep.
+    char c;
+    for ( int i=0; i < strlen(inst->statsd_prefix); i++ ) { 
+        c =  inst->statsd_prefix[i];
+        if ( c == '.' ) { 
+            inst->statsd_prefix[i] = '_';
+        } 
+    }
+
+    // create the statsd link here so we don't do it for every metric we send.
+    inst->statsd_link =  statsd_init(inst->statsd_host, inst->statsd_port);
+
+
+    #else
+    if (inst->send_metrics) { 
+		cf_log_err_cs(conf, "'statsd' client  not enabled at compiled time");
+		return -1;
+    }
+    #endif
+#endif
+
 	return 0;
 }
 
@@ -668,6 +710,9 @@ static int mod_detach(UNUSED void *instance)
 	rlm_mschap_t *inst = instance;
 
 	fr_connection_pool_free(inst->wb_pool);
+#ifdef WITH_STATSD
+    statsd_finalize(inst->statsd_link)
+#endif
 #endif
 
 	return 0;
