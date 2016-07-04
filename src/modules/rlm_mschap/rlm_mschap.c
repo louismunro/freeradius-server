@@ -40,7 +40,7 @@ RCSID("$Id$")
 #ifdef WITH_AUTH_WINBIND
 #include "auth_wbclient.h"
     #ifdef WITH_STATSD
-#include "statsd/statsd_client.h"
+#include "statsd/statsd-client.h"
     #endif
 #endif
 
@@ -569,9 +569,9 @@ static const CONF_PARSER module_config[] = {
 #ifdef WITH_AUTH_WINBIND
     #ifdef WITH_STATSD
 	{ "send_statsd_metrics", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_mschap_t, send_metrics), "yes" },
-	{ "statsd_host", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_mschap_t, statsd_host), "localhost" },
-	{ "statsd_port", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_mschap_t, statsd_port), 8125 },
-	{ "statsd_sample_rate", FR_CONF_OFFSET(PW_TYPE_FLOAT, rlm_mschap_t, statsd_sample_rate), 1.0 },
+	{ "statsd_host", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_mschap_t, statsd_host), "localhost" }, 
+	{ "statsd_sample_rate", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_mschap_t, statsd_sample_rate), "100" },
+	{ "statsd_port", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_mschap_t, statsd_port), "8125" },
     #endif
 #endif
 	CONF_PARSER_TERMINATOR
@@ -670,16 +670,14 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 #ifdef WITH_AUTH_WINBIND
     #ifdef WITH_STATSD
     if (!inst->statsd_prefix) { 
-        char hostname[255];
-        if ((gethostname(hostname, sizeof(hostname))) < 0 ) { 
+        if ((gethostname(inst->statsd_prefix, sizeof(inst->statsd_prefix))) < 0 ) { 
             cf_log_err_cs(conf, "cannot get my own hostname: %s\n", strerror(errno));
             return -1;
         }
-        inst->statsd_prefix = hostname;
     }
     // replace the dots in the hostname with underscores. StatsD uses dots as namespace sep.
     char c;
-    for ( int i=0; i < strlen(inst->statsd_prefix); i++ ) { 
+    for ( uint i=0; i < strlen(inst->statsd_prefix); i++ ) { 
         c =  inst->statsd_prefix[i];
         if ( c == '.' ) { 
             inst->statsd_prefix[i] = '_';
@@ -711,7 +709,7 @@ static int mod_detach(UNUSED void *instance)
 
 	fr_connection_pool_free(inst->wb_pool);
 #ifdef WITH_STATSD
-    statsd_finalize(inst->statsd_link)
+    statsd_finalize(inst->statsd_link);
 #endif
 #endif
 

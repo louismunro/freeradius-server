@@ -4013,9 +4013,7 @@ $as_echo "#define WITH_AUTH_WINBIND 1" >>confdefs.h
       fi
     fi
 
-set -x
-PS4='Line ${LINENO}: '
-    if test "x$ac_cv_header_statsdclient_h" = "xyes" ; then
+    if test "x$ac_cv_header_statsd_statsdmclient_h" = "xyes" ; then
 
       smart_try_dir="$statsdclient_lib_dir"
 
@@ -4064,7 +4062,6 @@ rm -f core conftest.err conftest.$ac_objext \
   LIBS="$old_LIBS"
   CPPFLAGS="$old_CPPFLAGS"
 fi
-
 
 if test "x$smart_lib" = "x"; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for statsd_init in -lstatsdclient" >&5
@@ -4208,7 +4205,6 @@ else
     targetname=
     echo \*\*\* module rlm_mschap is disabled.
 fi
-set +x
 
 if test x"$fail" != x""; then
 	if test x"${enable_strict_dependencies}" = x"yes"; then

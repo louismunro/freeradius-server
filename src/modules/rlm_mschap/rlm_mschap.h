@@ -44,9 +44,9 @@ typedef struct rlm_mschap_t {
 	fr_connection_pool_t    *wb_pool;
     bool            send_metrics;
     char            statsd_prefix[255]; //normally this would be the hosts' own name
-    char            *statsd_host;
-    uint16_t        statsd_port;
-    float           statsd_sample_rate;
+    char const      *statsd_host;
+    uint            statsd_port;
+    uint            statsd_sample_rate;
     statsd_link     *statsd_link;
 #ifdef __APPLE__
 	bool			open_directory;
