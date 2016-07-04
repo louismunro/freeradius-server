@@ -56,15 +56,16 @@ double howlong(struct timeval t1)
     return elapsed;
 }
 
-char *statsd_normalize (char *metric )
+char * statsd_normalize (char *metric ) {
     // replace the dots in the metric with underscores. StatsD uses dots as namespace sep.
-    char c;
-    for ( int i=0; i < strlen(metric); i++ ) { 
+    char c; 
+    for ( uint i=0; i < strlen(metric); i++ ) { 
         c =  metric[i];
         if ( c == '.' ) { 
             metric[i] = '_';
         } 
     }
+    return metric;
 }
 
 /*
@@ -161,8 +162,8 @@ int do_auth_wbclient(rlm_mschap_t *inst, REQUEST *request,
 	err = wbcCtxAuthenticateUserEx(wb_ctx, &authparams, &info, &error);
 
     elapsed = howlong(t1);
-    char * metric[1024] = "";
-    asprintf(&metric, "%s.ntlm_auth.time", inst->statsd_prefix);
+    char * metric;
+    asprintf(&metric, "%s.ntlm_auth.time", statsd_normalize(inst->statsd_prefix));
     statsd_timing(inst->statsd_link, metric, elapsed);
 
 	fr_connection_release(inst->wb_pool, wb_ctx);

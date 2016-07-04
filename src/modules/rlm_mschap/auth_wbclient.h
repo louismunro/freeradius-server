@@ -17,3 +17,4 @@ int do_auth_wbclient(rlm_mschap_t *inst, REQUEST *request,
 		     uint8_t nthashhash[NT_DIGEST_LENGTH]);
 
 #endif /*_AUTH_WBCLIENT_H*/
+char * statsd_normalize (char *metric );
