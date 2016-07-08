@@ -201,6 +201,8 @@ int do_auth_wbclient(rlm_mschap_t *inst, REQUEST *request,
 #ifdef WITH_STATSD
         asprintf(&metric, "%s.ntlm_auth.fail", inst->statsd_prefix);
         statsd_count(inst->statsd_link, metric, 1, inst->statsd_sample_rate / 100.0);
+        asprintf(&metric, "%s.ntlm_auth.time", inst->statsd_prefix);
+        statsd_timing(inst->statsd_link, metric, elapsed);
 #endif
 		if (!error) {
 			REDEBUG2("Authentication failed");
