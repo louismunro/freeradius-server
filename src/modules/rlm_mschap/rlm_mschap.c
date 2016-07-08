@@ -568,7 +568,7 @@ static const CONF_PARSER module_config[] = {
 #endif
 #ifdef WITH_AUTH_WINBIND
     #ifdef WITH_STATSD
-	{ "send_statsd_metrics", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_mschap_t, send_metrics), "yes" },
+	{ "send_statsd_metrics", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_mschap_t, send_metrics), "no" },
 	{ "statsd_host", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_mschap_t, statsd_host), "localhost" }, 
 	{ "statsd_sample_rate", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_mschap_t, statsd_sample_rate), "100" },
 	{ "statsd_port", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_mschap_t, statsd_port), "8125" },
