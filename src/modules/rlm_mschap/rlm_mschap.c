@@ -669,11 +669,9 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 
 #ifdef WITH_AUTH_WINBIND
     #ifdef WITH_STATSD
-    if (!inst->statsd_prefix) { 
-        if ((gethostname(inst->statsd_prefix, sizeof(inst->statsd_prefix))) < 0 ) { 
-            cf_log_err_cs(conf, "cannot get my own hostname: %s\n", strerror(errno));
-            return -1;
-        }
+    if ((gethostname(inst->statsd_prefix, sizeof(inst->statsd_prefix))) < 0 ) { 
+        cf_log_err_cs(conf, "cannot get my own hostname: %s\n", strerror(errno));
+        return -1;
     }
     // replace the dots in the hostname with underscores. StatsD uses dots as namespace sep.
     char c;
