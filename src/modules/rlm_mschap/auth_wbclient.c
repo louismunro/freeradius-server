@@ -36,6 +36,7 @@ RCSID("$Id$")
 
 #define NT_LENGTH 24
 
+#ifdef WITH_STATSD
 /*
  * Compute the elapsed time between now and a time in the past.
  *
@@ -43,8 +44,6 @@ RCSID("$Id$")
  *  a double containing the number of miliseconds between 
  *  now and the tv passed as argument.
  */
-double howlong(struct timeval t1);
-
 double howlong(struct timeval t1)
 {
     struct timeval end;
@@ -55,18 +54,7 @@ double howlong(struct timeval t1)
 
     return elapsed;
 }
-
-char * statsd_normalize (char *metric ) {
-    // replace the dots in the metric with underscores. StatsD uses dots as namespace sep.
-    char c; 
-    for ( uint i=0; i < strlen(metric); i++ ) { 
-        c =  metric[i];
-        if ( c == '.' ) { 
-            metric[i] = '_';
-        } 
-    }
-    return metric;
-}
+#endif
 
 /*
  *	Check NTLM authentication direct to winbind via
@@ -143,28 +131,36 @@ int do_auth_wbclient(rlm_mschap_t *inst, REQUEST *request,
 					WBC_MSV1_0_ALLOW_SERVER_TRUST_ACCOUNT;
 
     
+    char * metric; // holds stastd metric name
 	/*
 	 * Send auth request across to winbind
 	 */
 	wb_ctx = fr_connection_get(inst->wb_pool);
 	if (wb_ctx == NULL) {
 		RERROR("Unable to get winbind connection from pool");
+#ifdef WITH_STATSD
+        asprintf(&metric, "%s.ntlm_auth.error", inst->statsd_prefix);
+        statsd_count(inst->statsd_link, metric, 1, inst->statsd_sample_rate / 100.0);
+#endif
 		goto done;
 	}
 
 	RDEBUG2("sending authentication request user='%s' domain='%s'", authparams.account_name,
 									authparams.domain_name);
 
+#ifdef WITH_STATSD
     struct timeval t1;
     double elapsed;
     gettimeofday(&t1, NULL);
+#endif
 
 	err = wbcCtxAuthenticateUserEx(wb_ctx, &authparams, &info, &error);
 
+#ifdef WITH_STATSD
     elapsed = howlong(t1);
-    char * metric;
-    asprintf(&metric, "%s.ntlm_auth.time", statsd_normalize(inst->statsd_prefix));
+    asprintf(&metric, "%s.ntlm_auth.time", inst->statsd_prefix);
     statsd_timing(inst->statsd_link, metric, elapsed);
+#endif
 
 	fr_connection_release(inst->wb_pool, wb_ctx);
 
@@ -184,11 +180,23 @@ int do_auth_wbclient(rlm_mschap_t *inst, REQUEST *request,
 		RERROR("Unable to contact winbind!");
 		RDEBUG2("Check that winbind is running and that FreeRADIUS has");
 		RDEBUG2("permission to connect to the winbind privileged socket.");
+#ifdef WITH_STATSD
+        asprintf(&metric, "%s.ntlm_auth.error", inst->statsd_prefix);
+        statsd_count(inst->statsd_link, metric, 1, inst->statsd_sample_rate / 100.0);
+#endif
 		break;
 	case WBC_ERR_DOMAIN_NOT_FOUND:
 		REDEBUG2("Domain not found");
+#ifdef WITH_STATSD
+        asprintf(&metric, "%s.ntlm_auth.error", inst->statsd_prefix);
+        statsd_count(inst->statsd_link, metric, 1, inst->statsd_sample_rate / 100.0);
+#endif
 		break;
 	case WBC_ERR_AUTH_ERROR:
+#ifdef WITH_STATSD
+        asprintf(&metric, "%s.ntlm_auth.fail", inst->statsd_prefix);
+        statsd_count(inst->statsd_link, metric, 1, inst->statsd_sample_rate / 100.0);
+#endif
 		if (!error) {
 			REDEBUG2("Authentication failed");
 			break;
@@ -218,6 +226,10 @@ int do_auth_wbclient(rlm_mschap_t *inst, REQUEST *request,
 		 *   WBC_ERR_NO_MEMORY
 		 * neither of which are particularly likely.
 		 */
+#ifdef WITH_STATSD
+        asprintf(&metric, "%s.ntlm_auth.error", inst->statsd_prefix);
+        statsd_count(inst->statsd_link, metric, 1, inst->statsd_sample_rate / 100.0);
+#endif
 		if (error && error->display_string) {
 			REDEBUG2("libwbclient error: wbcErr %d (%s)", err, error->display_string);
 		} else {

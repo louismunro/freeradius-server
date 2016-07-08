@@ -16,5 +16,9 @@ int do_auth_wbclient(rlm_mschap_t *inst, REQUEST *request,
 		     uint8_t const *challenge, uint8_t const *response,
 		     uint8_t nthashhash[NT_DIGEST_LENGTH]);
 
+
+
+#ifdef WITH_STATSD
+double howlong(struct timeval t1);
+#endif
 #endif /*_AUTH_WBCLIENT_H*/
-char * statsd_normalize (char *metric );
