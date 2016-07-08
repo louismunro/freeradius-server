@@ -80,6 +80,10 @@ int do_auth_wbclient(rlm_mschap_t *inst, REQUEST *request,
 	char domain_name_buf[500];
 	uint8_t resp[NT_LENGTH];
 
+#ifdef WITH_STATSD
+    char * metric; // holds stastd metric name
+#endif
+
 	/*
 	 * Clear the auth parameters - this is important, as
 	 * there are options that will cause wbcAuthenticateUserEx
@@ -131,7 +135,6 @@ int do_auth_wbclient(rlm_mschap_t *inst, REQUEST *request,
 					WBC_MSV1_0_ALLOW_SERVER_TRUST_ACCOUNT;
 
     
-    char * metric; // holds stastd metric name
 	/*
 	 * Send auth request across to winbind
 	 */
@@ -243,6 +246,9 @@ done:
 	if (info) wbcFreeMemory(info);
 	if (error) wbcFreeMemory(error);
 
+#ifdef WITH_STATSD
+    free(metric);
+#endif
 	return rcode;
 }
 
