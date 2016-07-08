@@ -188,13 +188,15 @@ mschap {
 	# An optional retry message.
 #	retry_msg = "Re-enter (or reset) the password"
     
+    statsdclient {  
     # StatsD support
     # This section requires both building with samba 4.2 and above and a copy of libstatsdclient.
     # It allows the server to send metrics to a StatsD server, including the time required for an ntlm_auth through winbind,
     # the number of failed authentication and the number of authentication errors.
 
-#   send_statsd_metrics = "no"
-#   statsd_host = "localhost"
-#   statsd_port = "8125"
-#   statsd_sample_rate = "100"  # a percentage of all calls that will be passed to StatsD
+    #   send_statsd_metrics = no
+    #   statsd_host = localhost
+    #   statsd_port = 8125
+    #   statsd_sample_rate = 100  # a percentage of all calls that will be passed to StatsD
+    }
 }

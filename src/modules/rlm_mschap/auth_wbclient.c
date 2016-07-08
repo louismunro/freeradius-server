@@ -161,8 +161,6 @@ int do_auth_wbclient(rlm_mschap_t *inst, REQUEST *request,
 
 #ifdef WITH_STATSD
     elapsed = howlong(t1);
-    asprintf(&metric, "%s.ntlm_auth.time", inst->statsd_prefix);
-    statsd_timing(inst->statsd_link, metric, elapsed);
 #endif
 
 	fr_connection_release(inst->wb_pool, wb_ctx);
@@ -174,6 +172,10 @@ int do_auth_wbclient(rlm_mschap_t *inst, REQUEST *request,
 	 */
 	switch (err) {
 	case WBC_ERR_SUCCESS:
+#ifdef WITH_STATSD
+        asprintf(&metric, "%s.ntlm_auth.time", inst->statsd_prefix);
+        statsd_timing(inst->statsd_link, metric, elapsed);
+#endif
 		rcode = 0;
 		RDEBUG2("Authenticated successfully");
 		/* Grab the nthashhash from the result */

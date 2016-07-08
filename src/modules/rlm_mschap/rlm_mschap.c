@@ -548,6 +548,18 @@ static const CONF_PARSER passchange_config[] = {
 	CONF_PARSER_TERMINATOR
 };
 
+#ifdef WITH_AUTH_WINBIND
+    #ifdef WITH_STATSD
+static const CONF_PARSER statsdclient_config[] = {
+	{ "send_statsd_metrics", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_mschap_t, send_metrics), "no" },
+	{ "statsd_host", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_mschap_t, statsd_host), "localhost" }, 
+	{ "statsd_sample_rate", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_mschap_t, statsd_sample_rate), "100" },
+	{ "statsd_port", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_mschap_t, statsd_port), "8125" },
+	CONF_PARSER_TERMINATOR
+};
+    #endif
+#endif
+
 static const CONF_PARSER module_config[] = {
 	/*
 	 *	Cache the password by default.
@@ -568,10 +580,7 @@ static const CONF_PARSER module_config[] = {
 #endif
 #ifdef WITH_AUTH_WINBIND
     #ifdef WITH_STATSD
-	{ "send_statsd_metrics", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_mschap_t, send_metrics), "no" },
-	{ "statsd_host", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_mschap_t, statsd_host), "localhost" }, 
-	{ "statsd_sample_rate", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_mschap_t, statsd_sample_rate), "100" },
-	{ "statsd_port", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_mschap_t, statsd_port), "8125" },
+	{ "statsdclient", FR_CONF_POINTER(PW_TYPE_SUBSECTION, NULL), (void const *) statsdclient_config },
     #endif
 #endif
 	CONF_PARSER_TERMINATOR
