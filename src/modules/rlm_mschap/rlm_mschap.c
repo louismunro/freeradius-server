@@ -33,15 +33,15 @@ RCSID("$Id$")
 
 #include <ctype.h>
 
+#ifdef WITH_STATSD
+#include "statsd/statsd-client.h"
+#endif
 #include "rlm_mschap.h"
 #include "mschap.h"
 #include "smbdes.h"
 
 #ifdef WITH_AUTH_WINBIND
 #include "auth_wbclient.h"
-    #ifdef WITH_STATSD
-#include "statsd/statsd-client.h"
-    #endif
 #endif
 
 #ifdef HAVE_OPENSSL_CRYPTO_H
