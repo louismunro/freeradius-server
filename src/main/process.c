@@ -44,6 +44,13 @@ RCSID("$Id$")
 #	include <sys/wait.h>
 #endif
 
+#ifdef HAVE_SYSTEMD_WATCHDOG
+#  include <systemd/sd-daemon.h>
+extern uint64_t sd_watchdog_interval;
+static fr_event_t *sd_watchdog_ev;
+#endif
+
+
 extern pid_t radius_pid;
 extern fr_cond_t *debug_condition;
 
@@ -4644,6 +4651,10 @@ static void event_status(struct timeval *wake)
 	if (rad_debug_lvl == 0) {
 		if (just_started) {
 			INFO("Ready to process requests");
+#ifdef HAVE_SYSTEMD_WATCHDOG
+            INFO("Emitting systemd READY notification"); 
+	        sd_notify(0, "READY=1");
+#endif
 			just_started = false;
 		}
 		return;
@@ -5076,6 +5087,31 @@ static int event_new_fd(rad_listen_t *this)
 	return 1;
 }
 
+/*
+ *	Emit a systemd watchdog notification and reschedule the event.
+ */
+#ifdef HAVE_SYSTEMD_WATCHDOG
+
+//static void sd_watchdog_event(struct timeval *now, UNUSED void *ctx)
+static void sd_watchdog_event(UNUSED void *ctx)
+{
+
+	struct timeval when;
+	gettimeofday(&when, NULL);
+
+	DEBUG("Emitting systemd watchdog notification");
+	sd_notify(0, "WATCHDOG=1");
+
+	tv_add(&when, sd_watchdog_interval / 2);
+	if (fr_event_insert(el, sd_watchdog_event, NULL, &when, &sd_watchdog_ev) < 0) {
+		rad_panic("Failed to insert watchdog event");
+	}
+
+}
+
+#endif
+
+
 /***********************************************************************
  *
  *	Signal handlers.
@@ -5250,6 +5286,11 @@ int radius_event_init(TALLOC_CTX *ctx) {
 	el = fr_event_list_create(ctx, event_status);
 	if (!el) return 0;
 
+#ifdef HAVE_SYSTEMD_WATCHDOG
+	if ((int) sd_watchdog_interval > 0) {
+		sd_watchdog_event(NULL);
+	}
+#endif
 	return 1;
 }
 

@@ -757,6 +757,9 @@ with_openssl
 with_openssl_lib_dir
 with_openssl_include_dir
 enable_openssl_version_check
+with_systemd
+with_systemd_lib_dir
+with_systemd_include_dir
 with_talloc_lib_dir
 with_talloc_include_dir
 with_pcap_lib_dir
@@ -1438,6 +1441,11 @@ Optional Packages:
                           directory to look for OpenSSL library files
   --with-openssl-include-dir=DIR
                           directory to look for OpenSSL include files
+  --with-systemd          use systemd. (default=yes)
+  --with-systemd-lib-dir=DIR
+                          directory to look for systemd library files
+  --with-systemd-include-dir=DIR
+                          directory to look for systemd include files
   --with-talloc-lib-dir=DIR
                           directory in which to look for talloc library files
   --with-talloc-include-dir=DIR
@@ -5468,6 +5476,46 @@ fi
 
 
 
+WITH_SYSTEMD=yes
+
+# Check whether --with-systemd was given.
+if test "${with_systemd+set}" = set; then :
+  withval=$with_systemd;  case "$withval" in
+  no)
+    WITH_SYSTEMD=no
+    ;;
+  *)
+    WITH_SYSTEMD=yes
+    ;;
+  esac
+
+fi
+
+
+systemd_lib_dir=
+
+# Check whether --with-systemd-lib-dir was given.
+if test "${with_systemd_lib_dir+set}" = set; then :
+  withval=$with_systemd_lib_dir;  case "$withval" in
+  *) systemd_lib_dir="$withval"
+    ;;
+  esac
+
+fi
+
+
+systemd_include_dir=
+
+# Check whether --with-systemd-include-dir was given.
+if test "${with_systemd_include_dir+set}" = set; then :
+  withval=$with_systemd_include_dir;  case "$withval" in
+  *) systemd_include_dir="$withval"
+    ;;
+  esac
+
+fi
+
+
 
 CHECKRAD=checkrad
 # Extract the first word of "perl", so it can be a program name with args.
@@ -5648,8 +5696,8 @@ fi
 
 
 missing_dir=`cd $ac_aux_dir && pwd`
-# Expand $ac_aux_dir to an absolute path.
-am_aux_dir=`cd "$ac_aux_dir" && pwd`
+# expand $ac_aux_dir to an absolute path
+am_aux_dir=`cd $ac_aux_dir && pwd`
 
 if test x"${MISSING+set}" != xset; then
   case $am_aux_dir in
@@ -6569,6 +6617,386 @@ if test "${with_pcap_lib_dir+set}" = set; then :
   esac
 fi
 
+
+if test "x$WITH_SYSTEMD" = xyes; then
+  smart_try_dir="$systemd_lib_dir"
+
+
+sm_lib_safe=`echo "systemd" | sed 'y%./+-%__p_%'`
+sm_func_safe=`echo "sd_notify" | sed 'y%./+-%__p_%'`
+
+old_LIBS="$LIBS"
+old_CPPFLAGS="$CPPFLAGS"
+smart_lib=
+smart_ldflags=
+smart_lib_dir=
+
+if test "x$smart_try_dir" != "x"; then
+  for try in $smart_try_dir; do
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sd_notify in -lsystemd in $try" >&5
+$as_echo_n "checking for sd_notify in -lsystemd in $try... " >&6; }
+    LIBS="-lsystemd $old_LIBS"
+    CPPFLAGS="-L$try -Wl,-rpath,$try $old_CPPFLAGS"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern char sd_notify();
+int
+main ()
+{
+sd_notify()
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+		 smart_lib="-lsystemd"
+		 smart_ldflags="-L$try -Wl,-rpath,$try"
+		 { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+		 break
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  done
+  LIBS="$old_LIBS"
+  CPPFLAGS="$old_CPPFLAGS"
+fi
+
+if test "x$smart_lib" = "x"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sd_notify in -lsystemd" >&5
+$as_echo_n "checking for sd_notify in -lsystemd... " >&6; }
+  LIBS="-lsystemd $old_LIBS"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern char sd_notify();
+int
+main ()
+{
+sd_notify()
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+	        smart_lib="-lsystemd"
+	        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  LIBS="$old_LIBS"
+fi
+
+if test "x$smart_lib" = "x"; then
+
+
+if test "x$LOCATE" != "x"; then
+        DIRS=
+  file=libsystemd${libltdl_cv_shlibext}
+
+  for x in `${LOCATE} $file 2>/dev/null`; do
+                                        base=`echo $x | sed "s%/${file}%%"`
+    if test "x$x" = "x$base"; then
+      continue;
+    fi
+
+    dir=`${DIRNAME} $x 2>/dev/null`
+                exclude=`echo ${dir} | ${GREP} /home`
+    if test "x$exclude" != "x"; then
+      continue
+    fi
+
+                    already=`echo \$smart_lib_dir ${DIRS} | ${GREP} ${dir}`
+    if test "x$already" = "x"; then
+      DIRS="$DIRS $dir"
+    fi
+  done
+fi
+
+eval "smart_lib_dir=\"\$smart_lib_dir $DIRS\""
+
+
+
+if test "x$LOCATE" != "x"; then
+        DIRS=
+  file=libsystemd.a
+
+  for x in `${LOCATE} $file 2>/dev/null`; do
+                                        base=`echo $x | sed "s%/${file}%%"`
+    if test "x$x" = "x$base"; then
+      continue;
+    fi
+
+    dir=`${DIRNAME} $x 2>/dev/null`
+                exclude=`echo ${dir} | ${GREP} /home`
+    if test "x$exclude" != "x"; then
+      continue
+    fi
+
+                    already=`echo \$smart_lib_dir ${DIRS} | ${GREP} ${dir}`
+    if test "x$already" = "x"; then
+      DIRS="$DIRS $dir"
+    fi
+  done
+fi
+
+eval "smart_lib_dir=\"\$smart_lib_dir $DIRS\""
+
+
+  for try in $smart_lib_dir /usr/local/lib /opt/lib; do
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sd_notify in -lsystemd in $try" >&5
+$as_echo_n "checking for sd_notify in -lsystemd in $try... " >&6; }
+    LIBS="-lsystemd $old_LIBS"
+    CPPFLAGS="-L$try -Wl,-rpath,$try $old_CPPFLAGS"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern char sd_notify();
+int
+main ()
+{
+sd_notify()
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+		  smart_lib="-lsystemd"
+		  smart_ldflags="-L$try -Wl,-rpath,$try"
+		  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+		  break
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  done
+  LIBS="$old_LIBS"
+  CPPFLAGS="$old_CPPFLAGS"
+fi
+
+if test "x$smart_lib" != "x"; then
+  eval "ac_cv_lib_${sm_lib_safe}_${sm_func_safe}=yes"
+  LIBS="$smart_ldflags $smart_lib $old_LIBS"
+  SMART_LIBS="$smart_ldflags $smart_lib $SMART_LIBS"
+fi
+
+  if test "x$ac_cv_lib_systemd_sd_notify" != "xyes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: systemd library not found. Use --with-systemd-lib-dir=<path>." >&5
+$as_echo "$as_me: WARNING: systemd library not found. Use --with-systemd-lib-dir=<path>." >&2;}
+  else
+
+$as_echo "#define HAVE_SYSTEMD 1" >>confdefs.h
+
+    HAVE_SYSTEMD=1
+    SYSTEMD_LIBS="${smart_lib}"
+    SYSTEMD_LDFLAGS="${smart_ldflags}"
+  fi
+    LIBS="${old_LIBS}"
+fi
+
+if test "x$HAVE_SYSTEMD" = x; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: skipping test for systemd watchdog" >&5
+$as_echo "$as_me: skipping test for systemd watchdog" >&6;}
+else
+  smart_try_dir="$systemd_lib_dir"
+
+
+sm_lib_safe=`echo "systemd" | sed 'y%./+-%__p_%'`
+sm_func_safe=`echo "sd_watchdog_enabled" | sed 'y%./+-%__p_%'`
+
+old_LIBS="$LIBS"
+old_CPPFLAGS="$CPPFLAGS"
+smart_lib=
+smart_ldflags=
+smart_lib_dir=
+
+if test "x$smart_try_dir" != "x"; then
+  for try in $smart_try_dir; do
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sd_watchdog_enabled in -lsystemd in $try" >&5
+$as_echo_n "checking for sd_watchdog_enabled in -lsystemd in $try... " >&6; }
+    LIBS="-lsystemd $old_LIBS"
+    CPPFLAGS="-L$try -Wl,-rpath,$try $old_CPPFLAGS"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern char sd_watchdog_enabled();
+int
+main ()
+{
+sd_watchdog_enabled()
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+		 smart_lib="-lsystemd"
+		 smart_ldflags="-L$try -Wl,-rpath,$try"
+		 { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+		 break
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  done
+  LIBS="$old_LIBS"
+  CPPFLAGS="$old_CPPFLAGS"
+fi
+
+if test "x$smart_lib" = "x"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sd_watchdog_enabled in -lsystemd" >&5
+$as_echo_n "checking for sd_watchdog_enabled in -lsystemd... " >&6; }
+  LIBS="-lsystemd $old_LIBS"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern char sd_watchdog_enabled();
+int
+main ()
+{
+sd_watchdog_enabled()
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+	        smart_lib="-lsystemd"
+	        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  LIBS="$old_LIBS"
+fi
+
+if test "x$smart_lib" = "x"; then
+
+
+if test "x$LOCATE" != "x"; then
+        DIRS=
+  file=libsystemd${libltdl_cv_shlibext}
+
+  for x in `${LOCATE} $file 2>/dev/null`; do
+                                        base=`echo $x | sed "s%/${file}%%"`
+    if test "x$x" = "x$base"; then
+      continue;
+    fi
+
+    dir=`${DIRNAME} $x 2>/dev/null`
+                exclude=`echo ${dir} | ${GREP} /home`
+    if test "x$exclude" != "x"; then
+      continue
+    fi
+
+                    already=`echo \$smart_lib_dir ${DIRS} | ${GREP} ${dir}`
+    if test "x$already" = "x"; then
+      DIRS="$DIRS $dir"
+    fi
+  done
+fi
+
+eval "smart_lib_dir=\"\$smart_lib_dir $DIRS\""
+
+
+
+if test "x$LOCATE" != "x"; then
+        DIRS=
+  file=libsystemd.a
+
+  for x in `${LOCATE} $file 2>/dev/null`; do
+                                        base=`echo $x | sed "s%/${file}%%"`
+    if test "x$x" = "x$base"; then
+      continue;
+    fi
+
+    dir=`${DIRNAME} $x 2>/dev/null`
+                exclude=`echo ${dir} | ${GREP} /home`
+    if test "x$exclude" != "x"; then
+      continue
+    fi
+
+                    already=`echo \$smart_lib_dir ${DIRS} | ${GREP} ${dir}`
+    if test "x$already" = "x"; then
+      DIRS="$DIRS $dir"
+    fi
+  done
+fi
+
+eval "smart_lib_dir=\"\$smart_lib_dir $DIRS\""
+
+
+  for try in $smart_lib_dir /usr/local/lib /opt/lib; do
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sd_watchdog_enabled in -lsystemd in $try" >&5
+$as_echo_n "checking for sd_watchdog_enabled in -lsystemd in $try... " >&6; }
+    LIBS="-lsystemd $old_LIBS"
+    CPPFLAGS="-L$try -Wl,-rpath,$try $old_CPPFLAGS"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+extern char sd_watchdog_enabled();
+int
+main ()
+{
+sd_watchdog_enabled()
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+		  smart_lib="-lsystemd"
+		  smart_ldflags="-L$try -Wl,-rpath,$try"
+		  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+		  break
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  done
+  LIBS="$old_LIBS"
+  CPPFLAGS="$old_CPPFLAGS"
+fi
+
+if test "x$smart_lib" != "x"; then
+  eval "ac_cv_lib_${sm_lib_safe}_${sm_func_safe}=yes"
+  LIBS="$smart_ldflags $smart_lib $old_LIBS"
+  SMART_LIBS="$smart_ldflags $smart_lib $SMART_LIBS"
+fi
+
+  if test "x$ac_cv_lib_systemd_sd_watchdog_enabled" != "xyes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: systemd watchdog is only available from systemd 209." >&5
+$as_echo "$as_me: WARNING: systemd watchdog is only available from systemd 209." >&2;}
+  else
+
+$as_echo "#define HAVE_SYSTEMD_WATCHDOG 1" >>confdefs.h
+
+  fi
+    LIBS="${old_LIBS}"
+fi
 
 pcap_include_dir=
 

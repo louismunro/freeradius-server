@@ -598,6 +598,48 @@ fi
 AC_SUBST([openssl_version_check_config])
 
 
+dnl #
+dnl #  extra argument: --with-systemd
+dnl #
+WITH_SYSTEMD=yes
+AC_ARG_WITH(systemd,
+[  --with-systemd          use systemd. (default=yes)],
+[ case "$withval" in
+  no)
+    WITH_SYSTEMD=no
+    ;;
+  *)
+    WITH_SYSTEMD=yes
+    ;;
+  esac ]
+)
+
+dnl #
+dnl #  extra argument: --with-systemd-lib-dir=dir
+dnl #
+systemd_lib_dir=
+AC_ARG_WITH(systemd-lib-dir,
+[AS_HELP_STRING([--with-systemd-lib-dir=DIR],
+[directory to look for systemd library files])],
+[ case "$withval" in
+  *) systemd_lib_dir="$withval"
+    ;;
+  esac ]
+)
+
+dnl #
+dnl #  extra argument: --with-systemd-includes=dir
+dnl #
+systemd_include_dir=
+AC_ARG_WITH(systemd-include-dir,
+[AS_HELP_STRING([--with-systemd-include-dir=DIR],
+[directory to look for systemd include files])],
+[ case "$withval" in
+  *) systemd_include_dir="$withval"
+    ;;
+  esac ]
+)
+
 dnl #############################################################
 dnl #
 dnl #  1. Checks for programs
@@ -826,6 +868,42 @@ AC_ARG_WITH(pcap-lib-dir,
       pcap_lib_dir="$withval"
       ;;
   esac])
+
+dnl #
+dnl #  Check for systemd
+dnl #
+if test "x$WITH_SYSTEMD" = xyes; then
+  smart_try_dir="$systemd_lib_dir"
+  FR_SMART_CHECK_LIB(systemd, sd_notify)
+  if test "x$ac_cv_lib_systemd_sd_notify" != "xyes"; then
+    AC_MSG_WARN([systemd library not found. Use --with-systemd-lib-dir=<path>.])
+  else
+    AC_DEFINE(HAVE_SYSTEMD, 1,
+      [Define to 1 if you have the `systemd' library (-lsystemd).]
+    )
+    HAVE_SYSTEMD=1
+    SYSTEMD_LIBS="${smart_lib}"
+    SYSTEMD_LDFLAGS="${smart_ldflags}"
+  fi
+  dnl Set by FR_SMART_CHECKLIB
+  LIBS="${old_LIBS}"
+fi
+
+if test "x$HAVE_SYSTEMD" = x; then
+  AC_MSG_NOTICE([skipping test for systemd watchdog])
+else
+  smart_try_dir="$systemd_lib_dir"
+  FR_SMART_CHECK_LIB(systemd, sd_watchdog_enabled)
+  if test "x$ac_cv_lib_systemd_sd_watchdog_enabled" != "xyes"; then
+    AC_MSG_WARN([systemd watchdog is only available from systemd 209.])
+  else
+    AC_DEFINE(HAVE_SYSTEMD_WATCHDOG, 1,
+      [Define to 1 if you have watchdog support in the `systemd' library (-lsystemd).]
+    )
+  fi
+  dnl Set by FR_SMART_CHECKLIB
+  LIBS="${old_LIBS}"
+fi
 
 dnl extra argument: --with-pcap-include-dir=DIR
 pcap_include_dir=

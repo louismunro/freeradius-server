@@ -51,6 +51,7 @@ RCSID("$Id$")
 #	define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
 
+
 /*
  *  Global variables.
  */
@@ -66,6 +67,11 @@ char const *radiusd_version = "FreeRADIUS Version " RADIUSD_VERSION_STRING
 ", for host " HOSTINFO ", built on " __DATE__ " at " __TIME__;
 
 static pid_t radius_pid;
+
+#ifdef HAVE_SYSTEMD_WATCHDOG
+#  include <systemd/sd-daemon.h>
+uint64_t sd_watchdog_interval = 10*1000000;
+#endif
 
 /*
  *  Configuration items.
@@ -358,6 +364,20 @@ int main(int argc, char *argv[])
 	if (tls_global_version_check(main_config.allow_vulnerable_openssl) < 0) exit(EXIT_FAILURE);
 #endif
 
+	/*
+	 *  The systemd watchdog enablement must be checked before we
+	 *  daemonize, but the notifications can come from any process.
+	 */
+#ifdef HAVE_SYSTEMD_WATCHDOG
+	if (!check_config) {
+		if (sd_watchdog_enabled(0, &sd_watchdog_interval) > 0) {
+			INFO("systemd watchdog interval is %d secs.\n", (int) sd_watchdog_interval / 1000000);
+		} else {
+			INFO("systemd watchdog is disabled.\n");
+		}
+	}
+#endif
+
 	fr_talloc_fault_setup();
 
 	/*
@@ -433,6 +453,7 @@ int main(int argc, char *argv[])
 
 			/* For cleanliness... */
 			close(from_child[0]);
+
 
 			/* Don't turn children into zombies */
 			if (!ret) {
