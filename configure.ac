@@ -869,42 +869,6 @@ AC_ARG_WITH(pcap-lib-dir,
       ;;
   esac])
 
-dnl #
-dnl #  Check for systemd
-dnl #
-if test "x$WITH_SYSTEMD" = xyes; then
-  smart_try_dir="$systemd_lib_dir"
-  FR_SMART_CHECK_LIB(systemd, sd_notify)
-  if test "x$ac_cv_lib_systemd_sd_notify" != "xyes"; then
-    AC_MSG_WARN([systemd library not found. Use --with-systemd-lib-dir=<path>.])
-  else
-    AC_DEFINE(HAVE_SYSTEMD, 1,
-      [Define to 1 if you have the `systemd' library (-lsystemd).]
-    )
-    HAVE_SYSTEMD=1
-    SYSTEMD_LIBS="${smart_lib}"
-    SYSTEMD_LDFLAGS="${smart_ldflags}"
-  fi
-  dnl Set by FR_SMART_CHECKLIB
-  LIBS="${old_LIBS}"
-fi
-
-if test "x$HAVE_SYSTEMD" = x; then
-  AC_MSG_NOTICE([skipping test for systemd watchdog])
-else
-  smart_try_dir="$systemd_lib_dir"
-  FR_SMART_CHECK_LIB(systemd, sd_watchdog_enabled)
-  if test "x$ac_cv_lib_systemd_sd_watchdog_enabled" != "xyes"; then
-    AC_MSG_WARN([systemd watchdog is only available from systemd 209.])
-  else
-    AC_DEFINE(HAVE_SYSTEMD_WATCHDOG, 1,
-      [Define to 1 if you have watchdog support in the `systemd' library (-lsystemd).]
-    )
-  fi
-  dnl Set by FR_SMART_CHECKLIB
-  LIBS="${old_LIBS}"
-fi
-
 dnl extra argument: --with-pcap-include-dir=DIR
 pcap_include_dir=
 AC_ARG_WITH(pcap-include-dir,
@@ -1029,6 +993,42 @@ else
     [Define to 1 if you have the `cap' library (-lcap).]
   )
   HAVE_LIBCAP=1
+fi
+
+dnl #
+dnl #  Check for systemd
+dnl #
+if test "x$WITH_SYSTEMD" = xyes; then
+  smart_try_dir="$systemd_lib_dir"
+  FR_SMART_CHECK_LIB(systemd, sd_notify)
+  if test "x$ac_cv_lib_systemd_sd_notify" != "xyes"; then
+    AC_MSG_WARN([systemd library not found. Use --with-systemd-lib-dir=<path>.])
+  else
+    AC_DEFINE(HAVE_SYSTEMD, 1,
+      [Define to 1 if you have the `systemd' library (-lsystemd).]
+    )
+    HAVE_SYSTEMD=1
+    SYSTEMD_LIBS="${smart_lib}"
+    SYSTEMD_LDFLAGS="${smart_ldflags}"
+  fi
+  dnl Set by FR_SMART_CHECKLIB
+  LIBS="${old_LIBS}"
+fi
+
+if test "x$HAVE_SYSTEMD" = x; then
+  AC_MSG_NOTICE([skipping test for systemd watchdog])
+else
+  smart_try_dir="$systemd_lib_dir"
+  FR_SMART_CHECK_LIB(systemd, sd_watchdog_enabled)
+  if test "x$ac_cv_lib_systemd_sd_watchdog_enabled" != "xyes"; then
+    AC_MSG_WARN([systemd watchdog is only available from systemd 209.])
+  else
+    AC_DEFINE(HAVE_SYSTEMD_WATCHDOG, 1,
+      [Define to 1 if you have watchdog support in the `systemd' library (-lsystemd).]
+    )
+  fi
+  dnl Set by FR_SMART_CHECKLIB
+  LIBS="${old_LIBS}"
 fi
 
 VL_LIB_READLINE
@@ -1314,6 +1314,24 @@ else
     AC_SUBST(COLLECTDC_LDFLAGS)
   else
     AC_MSG_WARN([collectdclient headers not found. Use --with-collectdclient-include-dir=<path>.])
+  fi
+fi
+
+dnl Check for systemd
+if test "x$SYSTEMD_LIBS" = x; then
+  AC_MSG_NOTICE([skipping test for systemd/sd-daemon.h.])
+else
+  dnl #
+  dnl # Check for systemd/sd-daemon.h header files
+  dnl #
+  smart_try_dir="$systemd_include_dir"
+  FR_SMART_CHECK_INCLUDE([systemd/sd-daemon.h])
+  if test "x$ac_cv_header_systemd_h" == "xyes"; then
+    AC_DEFINE(HAVE_SYSTEMD_H, 1, [Define to 1 if you have the `systemd' library (-lsystemd).])
+    AC_SUBST(SYSTEMD_LIBS)
+    AC_SUBST(SYSTEMD_LDFLAGS)
+  else
+    AC_MSG_WARN([systemd headers not found. Use --with-systemd-include-dir=<path>.])
   fi
 fi
 

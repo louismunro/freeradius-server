@@ -464,6 +464,9 @@
 /* Define to 1 if you have the `systemd' library (-lsystemd). */
 #undef HAVE_SYSTEMD
 
+/* Define to 1 if you have the `systemd' library (-lsystemd). */
+#undef HAVE_SYSTEMD_H
+
 /* Define to 1 if you have watchdog support in the `systemd' library
    (-lsystemd). */
 #undef HAVE_SYSTEMD_WATCHDOG
