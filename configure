@@ -9963,7 +9963,7 @@ smart_prefix=
 
   if test "x$ac_cv_header_systemd_h" == "xyes"; then
 
-$as_echo "#define HAVE_SYSTEMD_H 1" >>confdefs.h
+$as_echo "#define HAVE_SYSTEMD_SD_DAEMON_H 1" >>confdefs.h
 
 
 

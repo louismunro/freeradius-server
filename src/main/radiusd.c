@@ -70,7 +70,7 @@ static pid_t radius_pid;
 
 #ifdef HAVE_SYSTEMD_WATCHDOG
 #  include <systemd/sd-daemon.h>
-uint64_t sd_watchdog_interval = 10*1000000;
+uint64_t sd_watchdog_interval = 0;
 #endif
 
 /*

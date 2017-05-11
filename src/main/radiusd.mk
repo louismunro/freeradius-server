@@ -12,6 +12,7 @@ SRC_CFLAGS	:= -DHOSTINFO=\"${HOSTINFO}\"
 
 TGT_INSTALLDIR  := ${sbindir}
 TGT_LDLIBS	:= $(LIBS) $(OPENSSL_LIBS) $(LCRYPT) $(SYSTEMD_LIBS)
+TGT_LDFLAGS	:= $(LDFLAGS) $(SYSTEMD_LDFLAGS)
 TGT_PREREQS	:= libfreeradius-server.a libfreeradius-radius.a
 
 # Libraries can't depend on libraries (oops), so make the binary

@@ -1327,7 +1327,7 @@ else
   smart_try_dir="$systemd_include_dir"
   FR_SMART_CHECK_INCLUDE([systemd/sd-daemon.h])
   if test "x$ac_cv_header_systemd_h" == "xyes"; then
-    AC_DEFINE(HAVE_SYSTEMD_H, 1, [Define to 1 if you have the `systemd' library (-lsystemd).])
+    AC_DEFINE(HAVE_SYSTEMD_SD_DAEMON_H, 1, [Define to 1 if you have the `systemd' library (-lsystemd).])
     AC_SUBST(SYSTEMD_LIBS)
     AC_SUBST(SYSTEMD_LDFLAGS)
   else

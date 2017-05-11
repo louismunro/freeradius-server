@@ -59,6 +59,11 @@ else
        SUBSTVARS = -Vdist:Depends="libssl1.0.0 (>= 1.0.1e-2+deb7u5)"
 endif
 
+# Add libsystemd-dev as a Build-Depends to debian/control if it is known to this system
+ifeq ($(shell apt-cache show libsystemd-dev &>/dev/null && echo yes),yes)
+       CONTROL_BUILDDEPS += libsystemd-dev,
+endif
+
 include /usr/share/quilt/quilt.make
 
 config.status: configure
